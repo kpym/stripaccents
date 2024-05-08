@@ -25,7 +25,7 @@ Examples:
 
 ### From binary
 
-Download the binary from the [releases](github.com/kpym/stripaccents/releases) page.
+Download the binary from the [releases](https://github.com/kpym/stripaccents/releases) page.
 
 ### From source
 
