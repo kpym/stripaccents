@@ -16,7 +16,9 @@ Usage: stripaccents [options]
 
 Examples:
         stripaccents -s "Café"
+        stripaccents "Café"
         stripaccents -i in.txt -o out.txt
+        stripaccents in.txt
         stripaccents -i in.txt > out.txt
         cat in.txt | stripaccents > out.txt
 ```
