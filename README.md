@@ -8,11 +8,11 @@ A small tool to remove accents from a string or a file written in [go](https://g
 > stripaccents -h
 Usage: stripaccents [options]
   -i string
-        input file
+        input file (incompatible with -s)
   -o string
         output file
   -s string
-        string to process
+        string to process (incompatible with -i)
 
 Examples:
         stripaccents -s "Café"

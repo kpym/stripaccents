@@ -10,6 +10,7 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"io"
@@ -63,10 +64,16 @@ var params = struct {
 
 // parses the command line parameters
 func getParams() {
-	flag.StringVar(&params.in, "i", "", "input file")
+	flag.StringVar(&params.in, "i", "", "input file (incompatible with -s)")
 	flag.StringVar(&params.out, "o", "", "output file")
-	flag.StringVar(&params.str, "s", "", "string to process")
+	flag.StringVar(&params.str, "s", "", "string to process (incompatible with -i)")
 	flag.Parse()
+	// check if both -s and -i are provided
+	if params.in != "" && params.str != "" {
+		fmt.Fprintln(os.Stderr, "Error: -i and -s cannot be used together")
+		flag.Usage()
+		os.Exit(1)
+	}
 	// check if both -s and -i are not provided check the first positional argument
 	if params.str == "" && params.in == "" && flag.NArg() > 0 {
 		str := flag.Arg(0)
@@ -79,20 +86,44 @@ func getParams() {
 	}
 }
 
+func sameFile(file1, file2 string) bool {
+	if file1 == "" || file2 == "" {
+		return false
+	}
+	if file1 == file2 {
+		return true
+	}
+	fi1, err := os.Stat(file1)
+	if err != nil {
+		return false
+	}
+	fi2, err := os.Stat(file2)
+	if err != nil {
+		return false
+	}
+	return os.SameFile(fi1, fi2)
+}
+
 func main() {
 	getParams()
 
-	if params.str != "" {
-		fmt.Println(stripAccentsString(params.str))
-		return
-	}
-
 	var in io.Reader
-	if params.in != "" {
-		f, err := os.Open(params.in)
-		check(err, "Error opening input file")
-		defer f.Close()
-		in = f
+
+	if params.str != "" {
+		// convert the string to a reader
+		in = bytes.NewBufferString(params.str)
+	} else if params.in != "" {
+		if sameFile(params.in, params.out) {
+			// read the file into a buffer
+			data, err := os.ReadFile(params.in)
+			check(err, "Error reading input file")
+			in = bytes.NewBuffer(data)
+		} else {
+			f, err := os.Open(params.in)
+			check(err, "Error opening input file")
+			defer f.Close()
+			in = f
+		}
 	} else {
 		// check if data is being piped
 		fi, _ := os.Stdin.Stat()
@@ -114,16 +145,10 @@ func main() {
 		out = os.Stdout
 	}
 
-	stripAccentsFile(in, out)
+	stripAccents(in, out)
 }
 
-func stripAccentsString(s string) string {
-	t := transform.Chain(norm.NFD, runes.Remove(runes.In(unicode.Mn)), norm.NFC)
-	s, _, _ = transform.String(t, s)
-	return s
-}
-
-func stripAccentsFile(in io.Reader, out io.Writer) {
+func stripAccents(in io.Reader, out io.Writer) {
 	t := transform.Chain(norm.NFD, runes.Remove(runes.In(unicode.Mn)), norm.NFC)
 	r := transform.NewReader(in, t)
 	_, err := io.Copy(out, r)
