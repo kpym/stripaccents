@@ -1,6 +1,6 @@
 # stripaccents
 
-A small tool to remove accents from a string or a file written in [go](https://golang.org/).
+A small tool to remove accents from a string or a file.
 
 ## Usage
 
